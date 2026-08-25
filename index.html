@@ -239,13 +239,13 @@
                             <th style="width:30px;"><input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)"></th>
                             <th>ID Reporte</th>
                             <th>Fecha</th>
-                            <th>PIN Location</th>
+                            <th>Concretera</th>
+                            <th>Camión / Ticket</th>
                             <th>Técnico</th>
                             <th>Cliente</th>
                             <th>Proyecto</th>
                             <th>Mezcla</th>
                             <th>f'c (PSI)</th>
-                            <th>Cilindros</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
@@ -489,6 +489,21 @@
                         </div>
                     </div>
 
+                    <!-- NUEVOS CAMPOS SOLICITADOS -->
+                    <div class="form-group">
+                        <label>Nombre Concretera:</label>
+                        <input type="text" id="nombreConcretera" list="concreteraListOptions" placeholder="Ej. Concretera del Norte" required>
+                        <datalist id="concreteraListOptions"></datalist>
+                    </div>
+                    <div class="form-group">
+                        <label>Número de Camión:</label>
+                        <input type="text" id="numeroCamion" placeholder="Ej. Truck #12" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Número de Ticket:</label>
+                        <input type="text" id="numeroTicket" placeholder="Ej. TCK-998823" required>
+                    </div>
+
                     <div class="form-group"><label>Diseño Mezcla:</label><select id="mixCodeSelect" onchange="autoFillMixParams()"></select></div>
 
                     <div class="form-group">
@@ -657,7 +672,7 @@
 
         let db = JSON.parse(localStorage.getItem('pj6_db')) || [
             {
-                id: "2026-07-001", fecha: "2026-07-01", pinLocation: "PIN-ZONE-01", tecnico: "Pedro Rivera", cliente: "ECO CONCRETE LLC", proyecto: "Arecibo Facility",
+                id: "2026-07-001", fecha: "2026-07-01", pinLocation: "PIN-ZONE-01", nombreConcretera: "Concretera del Norte", numeroCamion: "Camión #04", numeroTicket: "TCK-44521", tecnico: "Pedro Rivera", cliente: "ECO CONCRETE LLC", proyecto: "Arecibo Facility",
                 localizacion: "Zona Norte", estructura: "Losa de Fundación", status: "PASS", photoData: "",
                 mix: "MIX-3000", req: 3000, slumpTarget: 4.0, slumpObtained: 4.25, temp: 85.0, pesoUnitario: 140.4, pctAire: 1.8,
                 cylinders: [
@@ -766,7 +781,6 @@
             document.getElementById(viewId).classList.add('active');
             el.classList.add('active');
             
-            // Cerrar menú móvil si está abierto al cambiar de vista
             document.getElementById('navMenu').classList.remove('mobile-open');
 
             if (viewId === 'dashboard-view') renderDashboard();
@@ -781,7 +795,6 @@
             if (viewId === 'analytics-view') populateAnalyticsFilters();
         }
 
-        // DASHBOARD FUNCIONES
         function renderDashboard() {
             const todayStr = new Date().toISOString().split('T')[0];
             document.getElementById('currentDashboardDate').textContent = `Fecha Actual: ${todayStr}`;
@@ -861,7 +874,6 @@
             }
         }
 
-        // QR CODE MODAL FUNCTIONALITY
         let activeQRCodeObj = null;
         function openQRCodeModal(id) {
             const r = db.find(rec => rec.id === id);
@@ -873,7 +885,7 @@
             const container = document.getElementById('qrcodeContainer');
             container.innerHTML = "";
 
-            const qrData = `ID REPORTE: ${r.id}\nPIN LOCATION: ${r.pinLocation || 'N/A'}\nCLIENTE: ${r.cliente}\nPROYECTO: ${r.proyecto}`;
+            const qrData = `ID REPORTE: ${r.id}\nPIN LOCATION: ${r.pinLocation || 'N/A'}\nCONCRETERA: ${r.nombreConcretera || 'N/A'}\nCAMIÓN: ${r.numeroCamion || 'N/A'}\nTICKET: ${r.numeroTicket || 'N/A'}`;
             
             activeQRCodeObj = new QRCode(container, {
                 text: qrData,
@@ -891,7 +903,6 @@
             document.getElementById('qrModalOverlay').style.display = 'none';
         }
 
-        // CALENDARIO DE ROTURAS
         function renderBreaksCalendar() {
             const filterDate = document.getElementById('calendarFilterDate').value;
             const tbody = document.getElementById('breaksCalendarTableBody');
@@ -1056,7 +1067,6 @@
             document.getElementById('previewModalOverlay').style.display = 'flex';
         }
 
-        // CALENDARIO DE SERVICIOS
         function renderServicesCalendar() {
             const filterDate = document.getElementById('serviceFilterDate').value;
             const tbody = document.getElementById('servicesCalendarTableBody');
@@ -1283,6 +1293,14 @@
             });
         }
 
+        function setupModalConcreteraOptions() {
+            const concDatalist = document.getElementById('concreteraListOptions');
+            concDatalist.innerHTML = '';
+            [...new Set(db.map(r => r.nombreConcretera).filter(Boolean))].forEach(c => {
+                concDatalist.appendChild(new Option('', c));
+            });
+        }
+
         function updateModalProjectOptions() {
             const selectedClient = document.getElementById('cliente').value.trim();
             const projectDatalist = document.getElementById('projectListOptions');
@@ -1398,13 +1416,13 @@
                     <td><input type="checkbox" class="record-checkbox" value="${r.id}"></td>
                     <td><b>${r.id}</b></td>
                     <td>${r.fecha}</td>
-                    <td><span style="background:#EEF2F6; padding:2px 6px; border-radius:4px; font-weight:600;">${r.pinLocation || 'N/A'}</span></td>
+                    <td>${r.nombreConcretera || 'N/A'}</td>
+                    <td>Camión: ${r.numeroCamion || '-'} <br>Ticket: ${r.numeroTicket || '-'}</td>
                     <td>${r.tecnico || '-'}</td>
                     <td>${r.cliente}</td>
                     <td>${r.proyecto}</td>
                     <td>${r.mix}</td>
                     <td>${r.req} psi</td>
-                    <td>${r.cylinders ? r.cylinders.length : 0} cilindros</td>
                     <td style="display:flex; gap:6px;">
                         <button type="button" class="btn btn-action" onclick="openQRCodeModal('${r.id}')">🖨️ QR Code</button>
                         <button type="button" class="btn btn-action" onclick="openSinglePreviewModal('${r.id}')">👁️ Preview</button>
@@ -1437,6 +1455,7 @@
             setupModalClientOptions();
             setupModalLocationOptions();
             setupModalStructureOptions();
+            setupModalConcreteraOptions();
             updateModalProjectOptions();
 
             document.getElementById('reportStatus').value = 'EN PROGRESO';
@@ -1457,6 +1476,9 @@
             document.getElementById('recordId').value = rec.id;
             document.getElementById('fecha').value = rec.fecha;
             document.getElementById('pinLocation').value = rec.pinLocation || '';
+            document.getElementById('nombreConcretera').value = rec.nombreConcretera || '';
+            document.getElementById('numeroCamion').value = rec.numeroCamion || '';
+            document.getElementById('numeroTicket').value = rec.numeroTicket || '';
             
             setupModalTechOptions();
             document.getElementById('tecnico').value = rec.tecnico || '';
@@ -1472,6 +1494,8 @@
 
             setupModalStructureOptions();
             document.getElementById('estructura').value = rec.estructura || '';
+
+            setupModalConcreteraOptions();
             
             populateMixSelect();
             document.getElementById('mixCodeSelect').value = rec.mix;
@@ -1528,6 +1552,9 @@
                 id: id,
                 fecha: document.getElementById('fecha').value,
                 pinLocation: document.getElementById('pinLocation').value.trim(),
+                nombreConcretera: document.getElementById('nombreConcretera').value.trim(),
+                numeroCamion: document.getElementById('numeroCamion').value.trim(),
+                numeroTicket: document.getElementById('numeroTicket').value.trim(),
                 tecnico: document.getElementById('tecnico').value.trim(),
                 cliente: document.getElementById('cliente').value.trim(),
                 proyecto: document.getElementById('proyecto').value.trim(),
@@ -1733,6 +1760,12 @@
                             <td style="text-align:left;">${r.localizacion || 'N/A'}</td>
                             <td style="text-align:left; background:#F8FAFC;"><b>Estructura:</b></td>
                             <td style="text-align:left;">${r.estructura || 'N/A'}</td>
+                        </tr>
+                        <tr>
+                            <td style="text-align:left; background:#F8FAFC;"><b>Concretera:</b></td>
+                            <td style="text-align:left;">${r.nombreConcretera || 'N/A'}</td>
+                            <td style="text-align:left; background:#F8FAFC;"><b>Camión / Ticket:</b></td>
+                            <td style="text-align:left;">Camión: ${r.numeroCamion || 'N/A'} | Ticket: ${r.numeroTicket || 'N/A'}</td>
                         </tr>
                         <tr>
                             <td style="text-align:left; background:#F8FAFC;"><b>Técnico:</b></td>
@@ -2082,14 +2115,14 @@
 
         function exportCSV() {
             if (!db || db.length === 0) return alert("No hay registros disponibles para exportar.");
-            const headers = ["ID_Reporte", "Fecha_Muestreo", "PIN_Location", "Tecnico", "Cliente", "Proyecto", "Localizacion", "Estructura", "Status", "Codigo_Mezcla", "Resistencia_Req_PSI", "Num_Cilindro", "ID_Cilindro", "Edad_Dias", "Fecha_Ensayo", "Resistencia_PSI"];
+            const headers = ["ID_Reporte", "Fecha_Muestreo", "PIN_Location", "Concretera", "Numero_Camion", "Numero_Ticket", "Tecnico", "Cliente", "Proyecto", "Localizacion", "Estructura", "Status", "Codigo_Mezcla", "Resistencia_Req_PSI", "Num_Cilindro", "ID_Cilindro", "Edad_Dias", "Fecha_Ensayo", "Resistencia_PSI"];
             let rows = [];
 
             db.forEach(r => {
                 if (r.cylinders) {
                     r.cylinders.forEach(c => {
                         rows.push([
-                            `"${r.id}"`, `"${r.fecha}"`, `"${r.pinLocation || ''}"`, `"${r.tecnico || ''}"`, `"${r.cliente || ''}"`, `"${r.proyecto || ''}"`, `"${r.localizacion || ''}"`, `"${r.estructura || ''}"`, `"${r.status || 'EN PROGRESO'}"`, `"${r.mix}"`, r.req || 0, c.num, `"${c.cylId}"`, c.age, `"${c.date}"`, c.psi !== null ? c.psi : ""
+                            `"${r.id}"`, `"${r.fecha}"`, `"${r.pinLocation || ''}"`, `"${r.nombreConcretera || ''}"`, `"${r.numeroCamion || ''}"`, `"${r.numeroTicket || ''}"`, `"${r.tecnico || ''}"`, `"${r.cliente || ''}"`, `"${r.proyecto || ''}"`, `"${r.localizacion || ''}"`, `"${r.estructura || ''}"`, `"${r.status || 'EN PROGRESO'}"`, `"${r.mix}"`, r.req || 0, c.num, `"${c.cylId}"`, c.age, `"${c.date}"`, c.psi !== null ? c.psi : ""
                         ].join(","));
                     });
                 }
@@ -2144,4 +2177,3 @@
     </script>
 </body>
 </html>
-[cite: 7]
